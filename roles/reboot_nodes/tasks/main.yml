@@ -7,7 +7,8 @@
     delay: 1
     retries: 5
     retry_delay: 3
-    timeout: 1800
+    timeout: "{{ reboot_timeout_to_retry_oc_wait | default(1800) }}"
+    oc_wait_timeout: "{{ reboot_wait_timeout_node_ready | default(120) }}"
 
 - name: Reboot worker nodes
   network.offline_migration_sdn_to_ovnk.reboot_nodes:
@@ -17,4 +18,5 @@
     delay: 1
     retries: 5
     retry_delay: 3
-    timeout: 1800
+    timeout: "{{ reboot_timeout_to_retry_oc_wait | default(1800) }}"
+    oc_wait_timeout: "{{ reboot_wait_timeout_node_ready | default(120) }}"

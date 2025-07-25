@@ -101,6 +101,19 @@ where cidr is a CIDR block and prefix is the slice of the CIDR block apportioned
 You cannot use any CIDR block that overlaps with the 100.64.0.0/16 CIDR block because the 
 OVN-Kubernetes network provider uses this block internally.
 
+- If you have a large number of nodes then you might need to change the following timeouts:
+  - MCP completion timeout: In the migration-playbook.yml set the following:
+    migration_mcp_completion_timeout: <to a larger value> # Timeout in seconds
+    The `wait_for_mcp_completion` module retries the following commands until the set timeout has reached:
+            oc wait mcp --all --for=condition=UPDATED=True --timeout=60s 
+            oc wait mcp --all --for=condition=UPDATING=False --timeout=60s
+            oc wait mcp --all --for=condition=DEGRADED=False --timeout=60s
+
+  - Reboot timeouts:
+    - reboot_timeout_to_retry_oc_wait: Overall time (seconds) to wait for all nodes to become Ready again.
+      Retry `oc wait node --all --for=condition=Ready --timeout=<value>s` command incase timeout has not reached.
+    - reboot_wait_timeout_node_ready: Per-call timeout (seconds) passed to `oc wait node --all --for=condition=Ready --timeout=<value>s`.
+
 ## Testing
 
 - You must run lint tests after making any changes to the code.

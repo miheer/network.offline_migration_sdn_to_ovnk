@@ -37,9 +37,15 @@ options:
     type: int
     default: 3
   timeout:
-    description: Desired timeout
+    description: >
+      Overall time (seconds) to wait for all nodes to become Ready again.
+      Retry `oc wait ... --timeout=<value>s` command incase timeout has not reached.
     type: int
     default: 1800
+  oc_wait_timeout:
+    description: Per-call timeout (seconds) passed to `oc wait ... --timeout=<value>s`.
+    type: int
+    default: 60
 """
 EXAMPLES = r"""
 - name: Reboot master nodes
@@ -51,6 +57,7 @@ EXAMPLES = r"""
     retries: 5
     retry_delay: 3
     timeout: 1800
+    oc_wait_timeout: "{{ reboot_wait_timeout_node_ready | default(60) }}"
 """
 RETURN = r"""
 changed:
@@ -151,11 +158,15 @@ def wait_for_nodes_unreachable(delay):
     time.sleep(delay * 60)  # ⏳ Wait for reboot to take effect
 
 
-def wait_for_nodes_ready(module, timeout, retries, delay):
+def wait_for_nodes_ready(module, timeout, retries, delay, oc_wait_timeout):
     """Wait for all nodes to become ready within a timeout."""
     start_time = time.time()
     while time.time() - start_time < timeout:
-        command = ["oc", "wait", "node", "--all", "--for", "condition=ready", "--timeout=60s"]
+        command = [
+            "oc", "wait", "node", "--all",
+            "--for=condition=Ready",
+            f"--timeout={int(oc_wait_timeout)}s"
+        ]
         stdout, error = run_command_with_retries(module, command, retries, delay)
         if not error:
             return True
@@ -172,6 +183,7 @@ def main():
         retries=dict(type="int", default=3),
         retry_delay=dict(type="int", default=3),
         timeout=dict(type="int", default=1800),  # Default timeout for nodes to come back
+        oc_wait_timeout=dict(type="int", default=60),
     )
 
     module = AnsibleModule(argument_spec=module_args, supports_check_mode=True)
@@ -183,6 +195,7 @@ def main():
     retries = module.params["retries"]
     retry_delay = module.params["retry_delay"]
     timeout = module.params["timeout"]
+    oc_wait_timeout = module.params["oc_wait_timeout"]
 
     # Step 1: Get nodes of the specified role
     nodes, error = get_nodes(module, role, retries, retry_delay)
@@ -210,7 +223,7 @@ def main():
     wait_for_nodes_unreachable(delay)
 
     # Step 4: Wait for all nodes to become ready
-    if not wait_for_nodes_ready(module, timeout, retries, retry_delay):
+    if not wait_for_nodes_ready(module, timeout, retries, retry_delay, oc_wait_timeout):
         module.fail_json(msg="❌ Nodes did not become ready within the timeout period.")
 
     module.exit_json(changed=True, results=reboot_results, msg="✅ All nodes rebooted and ready.")

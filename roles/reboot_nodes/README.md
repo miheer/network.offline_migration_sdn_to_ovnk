@@ -27,9 +27,10 @@ variables.
 
 ## Role variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-
+| Variable | Default | Description                                                                                                                                        |
+|----------|---------|----------------------------------------------------------------------------------------------------------------------------------------------------|
+|timeout  | 1800    | Overall time (seconds) to wait for all nodes to become Ready again. Retry `oc wait node --all --for=condition=Ready --timeout=<value>s` command incase timeout has not reached. |
+|oc_wait_timeout| 60      | Per-call timeout (seconds) passed to `oc wait node --all --for=condition=Ready --timeout=<value>s`.|                                                                                                                                                   |
 ---
 
 ## Dependencies

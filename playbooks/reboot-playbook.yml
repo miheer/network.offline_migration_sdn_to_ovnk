@@ -2,5 +2,8 @@
 - name: Reboot nodes
   hosts: localhost
   gather_facts: false
+  vars:
+    reboot_timeout_to_retry_oc_wait: 3600
+    reboot_wait_timeout_node_ready: 120
   roles:
     - role: network.offline_migration_sdn_to_ovnk.reboot_nodes
